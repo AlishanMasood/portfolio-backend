@@ -1,10 +1,13 @@
-import express from "express";
-const app = express();
-import dotenv from "dotenv";
-import connectDB from "./config/db.js";
+const express = require("express");
+const dotenv = require("dotenv");
+const connectDB = require("./config/db.js");
+
 dotenv.config();
+
+const app = express();
+
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  res.send("Hello World! on top");
 });
 
 function main() {
@@ -13,4 +16,5 @@ function main() {
     console.log(`Example app listening on port ${process.env.PORT}`);
   });
 }
+
 main();

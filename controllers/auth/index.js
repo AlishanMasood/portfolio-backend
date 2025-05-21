@@ -1,5 +1,5 @@
 import userModel from "../../models/userModel.js";
-import { hashPassword } from "../../utils/bcrypt/index.js";
+import { comparePasswords, hashPassword } from "../../utils/bcrypt/index.js";
 import { responseObject } from "./../../utils/responseObject/index.js";
 import jwt from "jsonwebtoken";
 //response object attributes (message, status, data, error)
@@ -66,7 +66,7 @@ export const registerUser = async (req, res) => {
     });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "30d",
+      expiresIn: process.env.JWT_EXPIRES_IN,
     });
     const resData = {
       ...user._doc,
@@ -75,6 +75,90 @@ export const registerUser = async (req, res) => {
     res
       .status(200)
       .send(responseObject("User Created Successfully", 200, resData));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .send(
+        responseObject(
+          "Internal Server Error",
+          500,
+          null,
+          "Unable to register user"
+        )
+      );
+  }
+};
+export const loginUser = async (req, res) => {
+  try {
+    const { email, username, password } = req.body;
+    if (!email && !username) {
+      res
+        .status(400)
+        .send(
+          responseObject(
+            "Email or username is required",
+            400,
+            null,
+            "Bad Request"
+          )
+        );
+      return;
+    }
+    let user = null;
+    if (email) {
+      user = await userModel.findOne({ email }).select("+password");
+    }
+    if (username) {
+      user = await userModel.findOne({ username }).select("+password");
+    }
+    if (!user) {
+      res
+        .status(404)
+        .send(responseObject("User not found", 404, null, "Not found"));
+      return;
+    }
+    const isMatch = await comparePasswords(password, user?.password);
+    if (!isMatch) {
+      res
+        .status(400)
+        .send(responseObject("Incorrect Password", 400, null, "Bad Request"));
+      return;
+    }
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    delete user._doc.password;
+    const resData = {
+      ...user._doc,
+      token,
+    };
+    return res
+      .status(200)
+      .send(responseObject("Login Successful", 200, resData));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .send(
+        responseObject(
+          "Internal Server Error",
+          500,
+          null,
+          "Unable to register user"
+        )
+      );
+  }
+};
+export const changePassword = async (req, res) => {
+  try {
+    const resData = {
+      // ...user._doc,
+      // token,
+    };
+    return res
+      .status(200)
+      .send(responseObject("Login Successful", 200, resData));
   } catch (error) {
     console.log(error);
     res
